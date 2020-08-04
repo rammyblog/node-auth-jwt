@@ -31,7 +31,7 @@ router.post('/register', async (req, res) => {
 
   //   Hash password
   try {
-    req.body.password = passwordEncrypt(req.body.password);
+    req.body.password = await passwordEncrypt(req.body.password);
   } catch (error) {
     return res.status(400).json({ error_msg: error });
   }
@@ -115,7 +115,7 @@ router.post('/verify', async (req, res) => {
     user.isActive = true;
     await user.save();
     // Delete token if user is verified
-    // await token.remove()
+    await token.remove();
     return res.status(200).json({ data: 'success' });
   } catch (error) {
     return res.status(400).json({ error_msg: error });
@@ -214,9 +214,10 @@ router.post('/password-reset', async (req, res) => {
         .status(400)
         .json({ error_msg: "You can't use this password again" });
     } else {
-      user.password = passwordEncrypt(req.body.password);
+      user.password = await passwordEncrypt(req.body.password);
       await user.save();
-
+      // Delete token if user is verified
+      await token.remove();
       // Send an email to the user telling the password change successful
       return res.status(200).json({ data: 'Success' });
     }
@@ -227,7 +228,7 @@ router.post('/password-reset', async (req, res) => {
 
 // User change password
 router.post('/change-password', ensureAuth, async (req, res) => {
-  const { error } = passwordResetValidation(req.body);
+  const { error } = passwordChangeValidation(req.body);
 
   if (error) {
     return res.status(400).json({ error_msg: error.details[0].message });
@@ -253,7 +254,7 @@ router.post('/change-password', ensureAuth, async (req, res) => {
       return res.status(400).json({ error_msg: 'Current password is wrong' });
     }
     // Ensure new password not equals to old password
-    user.password = passwordEncrypt(newPassword);
+    user.password = await passwordEncrypt(newPassword);
     await user.save();
     return res.json('Password changed successfully');
   } catch (error) {
