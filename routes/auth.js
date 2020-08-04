@@ -7,6 +7,7 @@ const {
   tokenValidation,
 } = require("../validation")
 const jwt = require("jsonwebtoken")
+const randomTokenGen = require("../utils/generateToken")
 const Token = require("../models/Token")
 
 router.post("/register", async (req, res) => {
@@ -35,8 +36,12 @@ router.post("/register", async (req, res) => {
 
   try {
     const savedUser = await user.save()
-    res.status(201).json({ data: savedUser })
     // Generate and send token
+    const token = await randomTokenGen()
+    const userToken = new Token({ _userId: savedUser._id, token: token })
+    await userToken.save()
+    // Send email using sendgrid here
+    res.status(201).json({ data: savedUser })
   } catch (error) {
     res.status(400).json(error)
   }
@@ -90,7 +95,8 @@ router.post("/verify", async (req, res) => {
     }
 
     // This should not even happen. I am checking if the user email matches the user id in the token
-    if (!token._userId != user._id) {
+
+    if (!(token._userId != user._id)) {
       return res.status(400).json({ error_msg: "Token does not match user" })
     }
 
@@ -101,7 +107,8 @@ router.post("/verify", async (req, res) => {
     user.isActive = true
     await user.save()
     // Delete token if user is verified
-    await token.deleteOne()
+    // await token.remove()
+    return res.status(200).json({ message: "success" })
   } catch (error) {
     return res.status(400).json({ error_msg: error })
   }
