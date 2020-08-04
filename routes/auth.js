@@ -6,7 +6,8 @@ const {
   loginValidation,
   tokenValidation,
   ensureEmailValidation,
-  passwordResetValidation
+  passwordResetValidation,
+  passwordChangeValidation
 } = require('../utils/validation');
 const jwt = require('jsonwebtoken');
 const randomTokenGen = require('../utils/generateToken');
@@ -182,14 +183,14 @@ router.post('/send-password-reset-token', async (req, res) => {
 // Password reset
 router.post('/password-reset', async (req, res) => {
   const { error } = passwordResetValidation(req.body);
-  const { email, token, newPassword } = req.body;
+  const { email, reqToken, newPassword } = req.body;
 
   if (error) {
     return res.status(400).json({ error_msg: error.details[0].message });
   }
 
   try {
-    const token = await Token.findOne({ token: req.body.token });
+    const token = await Token.findOne({ token: reqToken });
     // Token confirmation
     if (!token) {
       return res
@@ -206,10 +207,7 @@ router.post('/password-reset', async (req, res) => {
     }
 
     // Ensure new password not equals to old password
-    const passwordCompare = await bcrypt.compare(
-      req.body.password,
-      user.password
-    );
+    const passwordCompare = await bcrypt.compare(newPassword, user.password);
 
     if (passwordCompare) {
       return res
@@ -218,9 +216,46 @@ router.post('/password-reset', async (req, res) => {
     } else {
       user.password = passwordEncrypt(req.body.password);
       await user.save();
+
       // Send an email to the user telling the password change successful
       return res.status(200).json({ data: 'Success' });
     }
+  } catch (error) {
+    return res.status(400).json({ error_msg: error });
+  }
+});
+
+// User change password
+router.post('/change-password', ensureAuth, async (req, res) => {
+  const { error } = passwordResetValidation(req.body);
+
+  if (error) {
+    return res.status(400).json({ error_msg: error.details[0].message });
+  }
+  let { newPassword, oldPassword } = req.body;
+
+  if (newPassword == oldPassword) {
+    return res.status(400).json({
+      error_msg: 'New and Current password is the same, use a new password'
+    });
+  }
+
+  try {
+    const user = await User.findOne({ _id: req.user._id });
+
+    if (!user) {
+      return res.status(400).json({ error_msg: 'User not found' });
+    }
+    // Ensure old password is equal to db pass
+    const validPass = await bcrypt.compare(oldPassword, user.password);
+
+    if (!validPass) {
+      return res.status(400).json({ error_msg: 'Current password is wrong' });
+    }
+    // Ensure new password not equals to old password
+    user.password = passwordEncrypt(newPassword);
+    await user.save();
+    return res.json('Password changed successfully');
   } catch (error) {
     return res.status(400).json({ error_msg: error });
   }
