@@ -21,7 +21,7 @@ const loginValidation = (data) => {
   return schema.validate(data)
 }
 
-// Login validation
+// token verifit validation
 const tokenValidation = (data) => {
   const schema = Joi.object({
     token: Joi.string().required(),
@@ -31,7 +31,21 @@ const tokenValidation = (data) => {
   return schema.validate(data)
 }
 
+// token resend validation
+const resendTokenValidation = (data) => {
+  const schema = Joi.object({
+    email: Joi.string().min(6).required().email(),
+  })
+
+  return schema.validate(data)
+}
+
 // module.exports.registerValidation = registerValidation
 // module.exports.loginValidation = loginValidation
 // module.exports.tokenValidation = tokenValidation
-module.exports = { loginValidation, registerValidation, tokenValidation }
+module.exports = {
+  loginValidation,
+  registerValidation,
+  tokenValidation,
+  resendTokenValidation,
+}

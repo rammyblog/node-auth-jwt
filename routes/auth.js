@@ -5,6 +5,7 @@ const {
   registerValidation,
   loginValidation,
   tokenValidation,
+  resendTokenValidation,
 } = require("../validation")
 const jwt = require("jsonwebtoken")
 const randomTokenGen = require("../utils/generateToken")
@@ -37,9 +38,12 @@ router.post("/register", async (req, res) => {
   try {
     const savedUser = await user.save()
     // Generate and send token
-    const token = await randomTokenGen()
-    const userToken = new Token({ _userId: savedUser._id, token: token })
-    await userToken.save()
+    const token = await randomTokenGen(savedUser)
+    // const userToken = new Token({ _userId: savedUser._id, token: token })
+    // await userToken.save()
+    if (!token) {
+      res.status(500).json({ error_msg: "An error occured" })
+    }
     // Send email using sendgrid here
     res.status(201).json({ data: savedUser })
   } catch (error) {
@@ -108,10 +112,38 @@ router.post("/verify", async (req, res) => {
     await user.save()
     // Delete token if user is verified
     // await token.remove()
-    return res.status(200).json({ message: "success" })
+    return res.status(200).json({ data: "success" })
   } catch (error) {
     return res.status(400).json({ error_msg: error })
   }
+})
+
+router.post("/resend-verification-token", async (req, res) => {
+  const { error } = resendTokenValidation(req.body)
+  const { email } = req.body
+
+  if (error) {
+    return res.status(400).json({ error_msg: error.details[0].message })
+  }
+
+  try {
+    const user = await User.findOne({ email: email })
+    if (!user) {
+      return res
+        .status(400)
+        .json({ error_msg: "User with this email not found" })
+    }
+
+    if (user.isActive) {
+      return res
+        .status(400)
+        .json({ error_msg: "This user is already verified" })
+    }
+    // Generate and send token
+    const token = await randomTokenGen(user)
+    // send email to user
+    return res.status(200).json({ data: token })
+  } catch (error) {}
 })
 
 module.exports = router
