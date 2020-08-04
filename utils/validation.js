@@ -32,7 +32,7 @@ const tokenValidation = (data) => {
 }
 
 // token resend validation
-const resendTokenValidation = (data) => {
+const ensureEmailValidation = (data) => {
   const schema = Joi.object({
     email: Joi.string().min(6).required().email(),
   })
@@ -40,12 +40,21 @@ const resendTokenValidation = (data) => {
   return schema.validate(data)
 }
 
-// module.exports.registerValidation = registerValidation
-// module.exports.loginValidation = loginValidation
-// module.exports.tokenValidation = tokenValidation
+// pasword reset validation
+const passwordResetValidation = (data) => {
+  const schema = Joi.object({
+    token: Joi.string().required(),
+    email: Joi.string().min(6).required().email(),
+    password: Joi.string().min(6).required(),
+  })
+
+  return schema.validate(data)
+}
+
 module.exports = {
   loginValidation,
   registerValidation,
   tokenValidation,
-  resendTokenValidation,
+  ensureEmailValidation,
+  passwordResetValidation,
 }

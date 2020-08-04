@@ -23,6 +23,9 @@
   },
   "devDependencies": {
     "cross-env": "^7.0.2",
+    "eslint": "^7.6.0",
+    "eslint-config-airbnb-base": "^14.2.0",
+    "eslint-plugin-import": "^2.22.0",
     "nodemon": "^2.0.4"
   }
 }
