@@ -10,7 +10,7 @@ const dotenv = require('dotenv');
 const bodyParser = require('body-parser');
 const postRoute = require('./routes/post');
 const authRoute = require('./routes/auth');
-
+const docsRoute = require('./routes/docs');
 dotenv.config();
 
 // Connect to DB
@@ -33,6 +33,7 @@ app.use(bodyParser.json());
 
 // Route middlewares
 app.use('/api/user', authRoute);
+app.use('/api/v1', docsRoute);
 app.use('/api/post', postRoute);
 
 app.listen(3000, () => console.log('Server up and running'));

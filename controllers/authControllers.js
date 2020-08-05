@@ -108,7 +108,7 @@ const loginUser = async (req, res) => {
     }
     //   Create and assign a token
     const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET);
-    return res.status(200).json({ data: token });
+    return res.status(200).json({ access_token: token });
   } catch (err) {
     return res.status(400).json({ error_msg: err.message });
   }
@@ -154,7 +154,7 @@ const resendVerificationToken = async (req, res) => {
     // Generate and send token
     const token = await randomTokenGen(user);
     // send email to user
-    return res.status(200).json({ data: token });
+    return res.status(200).json({ data: 'success' });
   } catch (err) {
     return res.status(400).json({ error_msg: err.message });
   }
@@ -226,7 +226,7 @@ const changePassword = async (req, res) => {
     // Ensure new password not equals to old password
     user.password = await passwordEncrypt(newPassword);
     await user.save();
-    return res.json('Password changed successfully');
+    return res.json('Success');
   } catch (err) {
     return res.status(400).json({ error_msg: err.message });
   }

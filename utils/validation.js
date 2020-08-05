@@ -1,7 +1,7 @@
 const Joi = require('@hapi/joi');
 
 // Register validation
-const registerValidation = data => {
+const registerValidation = (data) => {
   const schema = Joi.object({
     name: Joi.string().min(6).required(),
     email: Joi.string().min(6).required().email(),
@@ -12,7 +12,7 @@ const registerValidation = data => {
 };
 
 // Login validation
-const loginValidation = data => {
+const loginValidation = (data) => {
   const schema = Joi.object({
     email: Joi.string().min(6).required().email(),
     password: Joi.string().min(6).required()
@@ -22,7 +22,7 @@ const loginValidation = data => {
 };
 
 // token verifit validation
-const tokenValidation = data => {
+const tokenValidation = (data) => {
   const schema = Joi.object({
     token: Joi.string().required(),
     email: Joi.string().min(6).required().email()
@@ -32,7 +32,7 @@ const tokenValidation = data => {
 };
 
 // token resend validation
-const ensureEmailValidation = data => {
+const ensureEmailValidation = (data) => {
   const schema = Joi.object({
     email: Joi.string().min(6).required().email()
   });
@@ -41,7 +41,7 @@ const ensureEmailValidation = data => {
 };
 
 // pasword reset validation
-const passwordResetValidation = data => {
+const passwordResetValidation = (data) => {
   const schema = Joi.object({
     token: Joi.string().required(),
     email: Joi.string().min(6).required().email(),
@@ -52,7 +52,7 @@ const passwordResetValidation = data => {
 };
 
 // Password change validator
-const passwordChangeValidation = data => {
+const passwordChangeValidation = (data) => {
   const schema = Joi.object({
     oldPassword: Joi.string().min(6).required(),
     newPassword: Joi.string().min(6).required()
