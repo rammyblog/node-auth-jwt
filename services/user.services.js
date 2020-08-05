@@ -14,7 +14,7 @@ const getUser = async (query) => {
 
 const getUsers = async (query) => {
   try {
-    const users = await User.find(query);
+    const users = await await User.find(query);
     return users;
   } catch (err) {
     throw Error(err);

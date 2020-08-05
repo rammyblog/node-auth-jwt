@@ -8,8 +8,14 @@ const {
   resendVerificationToken,
   sendPasswordResetToken,
   passwordReset,
-  changePassword
+  changePassword,
+  getAllUsers,
+  getAllActiveUsers
 } = require('../controllers/authControllers');
+
+router.get('/', getAllUsers);
+
+router.get('/active', getAllActiveUsers);
 
 router.post('/register', registerUser);
 

@@ -14,7 +14,11 @@ const {
 } = require('../utils/validation');
 const randomTokenGen = require('../utils/generateToken');
 const passwordEncrypt = require('../utils/passwordEncrypt');
-const { getUser, getUsers } = require('../services/user.services');
+const {
+  getUser,
+  getUsers,
+  getActiveUsers
+} = require('../services/user.services');
 const { getToken } = require('../services/Token.services');
 
 const validation = {
@@ -38,6 +42,15 @@ const handleValidation = (body, res, type) => {
 const getAllUsers = async (req, res) => {
   try {
     const users = await getUsers({});
+    return res.status(200).json({ data: users });
+  } catch (err) {
+    return res.status(400).json({ error_msg: err.message });
+  }
+};
+
+const getAllActiveUsers = async (req, res) => {
+  try {
+    const users = await getActiveUsers({ isActive: true });
     return res.status(200).json({ data: users });
   } catch (err) {
     return res.status(400).json({ error_msg: err.message });
@@ -221,6 +234,8 @@ const changePassword = async (req, res) => {
 };
 
 module.exports = {
+  getAllUsers,
+  getAllActiveUsers,
   registerUser,
   loginUser,
   verifyUserRegistration,
