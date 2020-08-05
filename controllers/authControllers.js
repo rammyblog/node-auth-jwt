@@ -13,8 +13,9 @@ const {
   passwordChangeValidation
 } = require('../utils/validation');
 const randomTokenGen = require('../utils/generateToken');
-const Token = require('../models/Token');
 const passwordEncrypt = require('../utils/passwordEncrypt');
+const { getUser, getUsers } = require('../services/user.services');
+const { getToken } = require('../services/Token.services');
 
 const validation = {
   register: registerValidation,
@@ -32,6 +33,15 @@ const handleValidation = (body, res, type) => {
   }
   // eslint-disable-next-line consistent-return
   return;
+};
+
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await getUsers({});
+    return res.status(200).json({ data: users });
+  } catch (err) {
+    return res.status(400).json({ error_msg: err.message });
+  }
 };
 
 const registerUser = async (req, res) => {
@@ -74,58 +84,46 @@ const loginUser = async (req, res) => {
   // Validate data before creating a user
   handleValidation(req.body, res, 'login');
 
-  //   Checking if the user is already in the db
-  const user = await User.findOne({ email: req.body.email });
+  try {
+    //   Checking if the user is already in the db
+    const user = await getUser({ email: req.body.email });
 
-  if (!user) {
-    return res.status(400).json({ error_msg: 'Email or password is wrong' });
+    //   Password check
+    const validPass = await bcrypt.compare(req.body.password, user.password);
+
+    if (!validPass) {
+      return res.status(400).json({ error_msg: 'Invalid password' });
+    }
+    //   Create and assign a token
+    const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET);
+    return res.status(200).json({ data: token });
+  } catch (err) {
+    return res.status(400).json({ error_msg: err.message });
   }
-
-  //   Password check
-  const validPass = await bcrypt.compare(req.body.password, user.password);
-
-  if (!validPass) {
-    return res.status(400).json({ error_msg: 'Invalid password' });
-  }
-  //   Create and assign a token
-  const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET);
-  return res.header('auth-token', token).send(token);
 };
 
 const verifyUserRegistration = async (req, res) => {
   // Validate the incoming data
   handleValidation(req.body, res, 'verifyUser');
   try {
-    const token = await Token.findOne({ token: req.body.token });
-
-    if (!token) {
-      return res
-        .status(400)
-        .json({ error_msg: 'Unable to find a matching token' });
-    }
-    const user = await User.findOne({ email: req.body.email });
-
-    if (!user) {
-      return res.status(400).json({ error_msg: 'User not found ' });
-    }
-
-    // This should not even happen. I am checking if the user email matches the user id in the token
-
-    if (!(token._userId !== user._id)) {
-      return res.status(400).json({ error_msg: 'Token does not match user' });
-    }
+    const token = await getToken({ token: req.body.token });
+    const user = await getUser({ email: req.body.email });
 
     if (user.isActive) {
       return res.status(400).json({ error_msg: 'User already verified' });
     }
 
+    // This should not even happen. I am checking if the user email matches the user id in the token
+    if (!(token._userId !== user._id)) {
+      return res.status(400).json({ error_msg: 'Token does not match user' });
+    }
+
     user.isActive = true;
     await user.save();
-    // Delete token if user is verified
     await token.remove();
     return res.status(200).json({ data: 'success' });
   } catch (err) {
-    return res.status(400).json({ error_msg: err });
+    return res.status(400).json({ error_msg: err.message });
   }
 };
 
@@ -135,13 +133,7 @@ const resendVerificationToken = async (req, res) => {
   const { email } = req.body;
 
   try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res
-        .status(400)
-        .json({ error_msg: 'User with this email not found' });
-    }
-
+    const user = await getUser({ email });
     if (user.isActive) {
       return res
         .status(400)
@@ -152,7 +144,7 @@ const resendVerificationToken = async (req, res) => {
     // send email to user
     return res.status(200).json({ data: token });
   } catch (err) {
-    return res.status(400).json({ error_msg: err });
+    return res.status(400).json({ error_msg: err.message });
   }
 };
 
@@ -162,19 +154,13 @@ const sendPasswordResetToken = async (req, res) => {
   const { email } = req.body;
 
   try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res
-        .status(400)
-        .json({ error_msg: 'User with this email not found' });
-    }
-
+    const user = await getUser({ email });
     // Generate and send token
     const token = await randomTokenGen(user);
     // send email to user
     return res.status(200).json({ data: token });
   } catch (err) {
-    return res.status(400).json({ error_msg: err });
+    return res.status(400).json({ error_msg: err.message });
   }
 };
 
@@ -183,21 +169,9 @@ const passwordReset = async (req, res) => {
   const { email, reqToken, newPassword } = req.body;
 
   try {
-    const token = await Token.findOne({ token: reqToken });
-    // Token confirmation
-    if (!token) {
-      return res
-        .status(400)
-        .json({ error_msg: 'Unable to find a matching token' });
-    }
-
+    const token = await getToken({ token: reqToken });
     // User confimation
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res
-        .status(400)
-        .json({ error_msg: 'User with this email not found' });
-    }
+    const user = await getUser({ email });
 
     // Ensure new password not equals to old password
     const passwordCompare = await bcrypt.compare(newPassword, user.password);
@@ -214,7 +188,7 @@ const passwordReset = async (req, res) => {
     // Send an email to the user telling the password change successful
     return res.status(200).json({ data: 'Success' });
   } catch (err) {
-    return res.status(400).json({ error_msg: err });
+    return res.status(400).json({ error_msg: err.message });
   }
 };
 
@@ -230,11 +204,7 @@ const changePassword = async (req, res) => {
   }
 
   try {
-    const user = await User.findOne({ _id: req.user._id });
-
-    if (!user) {
-      return res.status(400).json({ error_msg: 'User not found' });
-    }
+    const user = await getUser({ _id: req.user._id });
     // Ensure old password is equal to db pass
     const validPass = await bcrypt.compare(oldPassword, user.password);
 
@@ -246,7 +216,7 @@ const changePassword = async (req, res) => {
     await user.save();
     return res.json('Password changed successfully');
   } catch (err) {
-    return res.status(400).json({ error_msg: err });
+    return res.status(400).json({ error_msg: err.message });
   }
 };
 
