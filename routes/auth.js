@@ -13,9 +13,9 @@ const {
   getAllActiveUsers
 } = require('../controllers/authControllers');
 
-router.get('/', getAllUsers);
+router.get('/', ensureAuth, getAllUsers);
 
-router.get('/active', getAllActiveUsers);
+router.get('/active', ensureAuth, getAllActiveUsers);
 
 router.post('/register', registerUser);
 

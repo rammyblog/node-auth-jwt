@@ -100,7 +100,6 @@ const loginUser = async (req, res) => {
   try {
     //   Checking if the user is already in the db
     const user = await getUser({ email: req.body.email });
-
     //   Password check
     const validPass = await bcrypt.compare(req.body.password, user.password);
 
