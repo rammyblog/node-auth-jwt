@@ -153,7 +153,7 @@ const resendVerificationToken = async (req, res) => {
     }
     // Generate and send token
     const token = await randomTokenGen(user);
-    // send email to user
+    // send email using the token to user
     return res.status(200).json({ data: 'success' });
   } catch (err) {
     return res.status(400).json({ error_msg: err.message });

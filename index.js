@@ -5,23 +5,17 @@ const app = express();
 
 // Import Routes
 
-const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const bodyParser = require('body-parser');
 const postRoute = require('./routes/post');
 const authRoute = require('./routes/auth');
 const docsRoute = require('./routes/docs');
+const connectDB = require('./config/db');
+
 dotenv.config();
 
 // Connect to DB
-mongoose.connect(
-  process.env.MONGO_URI,
-  {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-  },
-  () => console.log('connected to db')
-);
+connectDB();
 
 // Middleware
 // app.use(express.json())
