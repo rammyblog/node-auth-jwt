@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-return */
 /* eslint-disable no-underscore-dangle */
 
 const bcrypt = require('bcryptjs');
@@ -15,12 +16,27 @@ const randomTokenGen = require('../utils/generateToken');
 const Token = require('../models/Token');
 const passwordEncrypt = require('../utils/passwordEncrypt');
 
-const registerUser = async (req, res) => {
-  // Validate data before creating a user
-  const { error } = registerValidation(req.body);
+const validation = {
+  register: registerValidation,
+  login: loginValidation,
+  verifyUser: tokenValidation,
+  ensureEmail: ensureEmailValidation,
+  passwordReset: passwordResetValidation,
+  passwordChange: passwordChangeValidation
+};
+
+const handleValidation = (body, res, type) => {
+  const { error } = validation[type](body);
   if (error) {
     return res.status(400).send(error.details[0].message);
   }
+  // eslint-disable-next-line consistent-return
+  return;
+};
+
+const registerUser = async (req, res) => {
+  // Validate data before creating a user
+  handleValidation(req.body, res, 'register');
 
   //   Checking if the user is already in the db
   const emailExist = await User.findOne({ email: req.body.email });
@@ -56,10 +72,7 @@ const registerUser = async (req, res) => {
 
 const loginUser = async (req, res) => {
   // Validate data before creating a user
-  const { error } = loginValidation(req.body);
-  if (error) {
-    return res.status(400).send(error.details[0].message);
-  }
+  handleValidation(req.body, res, 'login');
 
   //   Checking if the user is already in the db
   const user = await User.findOne({ email: req.body.email });
@@ -81,12 +94,7 @@ const loginUser = async (req, res) => {
 
 const verifyUserRegistration = async (req, res) => {
   // Validate the incoming data
-  const { error } = tokenValidation(req.body);
-
-  if (error) {
-    return res.status(400).json({ error_msg: error.details[0].message });
-  }
-
+  handleValidation(req.body, res, 'verifyUser');
   try {
     const token = await Token.findOne({ token: req.body.token });
 
@@ -122,12 +130,9 @@ const verifyUserRegistration = async (req, res) => {
 };
 
 const resendVerificationToken = async (req, res) => {
-  const { error } = ensureEmailValidation(req.body);
-  const { email } = req.body;
+  handleValidation(req.body, res, 'ensureEmail');
 
-  if (error) {
-    return res.status(400).json({ error_msg: error.details[0].message });
-  }
+  const { email } = req.body;
 
   try {
     const user = await User.findOne({ email });
@@ -152,12 +157,9 @@ const resendVerificationToken = async (req, res) => {
 };
 
 const sendPasswordResetToken = async (req, res) => {
-  const { error } = ensureEmailValidation(req.body);
-  const { email } = req.body;
+  handleValidation(req.body, res, 'ensureEmail');
 
-  if (error) {
-    return res.status(400).json({ error_msg: error.details[0].message });
-  }
+  const { email } = req.body;
 
   try {
     const user = await User.findOne({ email });
@@ -177,12 +179,8 @@ const sendPasswordResetToken = async (req, res) => {
 };
 
 const passwordReset = async (req, res) => {
-  const { error } = passwordResetValidation(req.body);
+  handleValidation(req.body, res, 'passwordReset');
   const { email, reqToken, newPassword } = req.body;
-
-  if (error) {
-    return res.status(400).json({ error_msg: error.details[0].message });
-  }
 
   try {
     const token = await Token.findOne({ token: reqToken });
@@ -221,11 +219,8 @@ const passwordReset = async (req, res) => {
 };
 
 const changePassword = async (req, res) => {
-  const { error } = passwordChangeValidation(req.body);
+  handleValidation(req.body, res, 'passwordChange');
 
-  if (error) {
-    return res.status(400).json({ error_msg: error.details[0].message });
-  }
   const { newPassword, oldPassword } = req.body;
 
   if (newPassword === oldPassword) {
